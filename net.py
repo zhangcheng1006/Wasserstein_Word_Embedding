@@ -23,9 +23,9 @@ def train(X_train, y_train, vocab_size, vocab2prob, n_epochs=5, batch_size=64, l
     y = tf.placeholder(dtype=tf.int32, shape=[None], name='y')
     X_onehot = tf.one_hot(X, depth=vocab_size)
     W = tf.Variable(tf.random.uniform([vocab_size, dim*ground_dim], dtype=tf.float32), name='W')
-    Embed1, Embed2, Embed_distances = Siamese(X_onehot, W, dim, ground_dim, lambd, p, n_iter, tol)
+    _, _, Embed_distances = Siamese(X_onehot, W, dim, ground_dim, lambd, p, n_iter, tol)
     Loss = objective(y, Embed_distances, m)
-    Jac = tf.gradients(Loss, W)
+    # Jac = tf.gradients(Loss, W)
     optimizer = tf.train.AdamOptimizer(learning_rate).minimize(Loss)
 
     init_op = tf.global_variables_initializer()
@@ -61,7 +61,7 @@ def train(X_train, y_train, vocab_size, vocab2prob, n_epochs=5, batch_size=64, l
                     y_total = np.concatenate((y_total, y_batch))
                 
                 # Running the Optimizer
-                _, embeddings, embed1, embed2, embed_distances, loss, jac = sess.run([optimizer, W, Embed1, Embed2, Embed_distances, Loss, Jac], feed_dict={X: X_batch, y: y_batch})
+                _, embeddings, embed_distances, loss = sess.run([optimizer, W, Embed_distances, Loss], feed_dict={X: X_batch, y: y_batch})
                 if i % 10 == 0:
                     print("Batch {}: Loss {}".format(i+1, loss))
                 if np.isnan(loss):
@@ -93,7 +93,15 @@ def train(X_train, y_train, vocab_size, vocab2prob, n_epochs=5, batch_size=64, l
                 break
     return embeddings, loss_history, time_history, embed_distances
 
-def predict(X, W):
-    embed = tf.matmul(X, W)
+def predict(X_test, embeddings, vocab_size, dim=32, ground_dim=2, lambd=0.05, p=1, n_iter=20, tol=1e-5):
+    num_samples = X_test.shape[0]
     
-    return embed
+    X = tf.placeholder(dtype=tf.int32, shape=[num_samples, 2], name='X')
+    W = tf.placeholder(dtype=tf.float32, shape=[vocab_size, dim*ground_dim], name='W')
+    X_onehot = tf.one_hot(X, depth=vocab_size)
+    _, _, Embed_distances = Siamese(X_onehot, W, dim, ground_dim, lambd, p, n_iter, tol)
+
+    with tf.Session() as sess:
+        pred_sim = sess.run(Embed_distances, feed_dict={X: X_test, W: embeddings})
+    
+    return pred_sim

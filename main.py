@@ -10,6 +10,7 @@ import tensorflow as tf
 from utils import *
 from preprocessing import *
 from net import *
+from evaluation import *
 
 vocab, vocab2id, vocab2prob, word_pairs = preprocess('./data/simple.wiki.small.txt')
 logging.info("Load vocabulary and word pairs from local file.")
@@ -32,7 +33,7 @@ while try_count < max_try:
     try:
         embeddings, loss_history, time_history, embed_distances = train(
             X_train, y_train, vocab_size=len(vocab), vocab2prob=vocab2prob, dim=embed_dim, 
-            learning_rate=0.01, n_epochs=n_epochs, ground_dim=2, batch_size=batch_size)
+            learning_rate=0.05, n_epochs=n_epochs, ground_dim=2, batch_size=batch_size)
         break
     except RuntimeError:
         logging.warning("Got loss NaN")
@@ -42,8 +43,14 @@ else:
 
 logging.info("Writing {}_{}_{}_batch to local file".format(file_name, 'WassR2', embed_dim))
 np.savez('./results/{}_{}_{}_batch'.format(file_name, 'WassR2', embed_dim), 
-    vocab=vocab, embeddings=embeddings, loss=loss_history, time=time_history, 
+    vocab=vocab, vocab2id=vocab2id, embeddings=embeddings, loss=loss_history, time=time_history, 
     embed_distances=embed_distances)
+
+word_pairs_test, true_sim = read_ground_truth('./data/wordsim353.csv')
+X_test = np.array([[vocab2id[w1], vocab2id[w2]] for (w1, w2) in word_pairs_test])
+
+pred_sim = predict(X_test, embeddings, vocab_size=len(vocab))
+spearman_rank = spearman_rank_correlation(true_sim, pred_sim)
 
 # # KL
 # logging.info("Running KL embedding, embed dim={}".format(embed_dim))

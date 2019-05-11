@@ -24,7 +24,7 @@ def cdist(X, Y):
     Y2 = tf.reshape(Y2, [1, -1])
     # return pairwise euclidead difference matrix
     distances = tf.sqrt(tf.maximum(
-        X2 + Y2 - 2 * tf.matmul(X, Y, False, True), 1e-5))
+        X2 + Y2 - 2 * tf.matmul(X, Y, False, True), 1e-3))
     # distances = tf.maximum(
     #     X2 + Y2 - 2 * tf.matmul(X, Y, False, True), 0.0)
     assert distances.shape == [X.shape[0], Y.shape[0]]
