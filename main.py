@@ -22,7 +22,7 @@ y_train = np.array([1] * len(word_pairs))
 
 embed_dim = 32
 ground_dim = 2
-n_epochs = 5
+n_epochs = 2
 batch_size = 1024
 max_try = 1
 
@@ -33,7 +33,7 @@ while try_count < max_try:
     try:
         embeddings, loss_history, time_history, embed_distances = train(
             X_train, y_train, vocab_size=len(vocab), vocab2prob=vocab2prob, dim=embed_dim, 
-            learning_rate=0.05, n_epochs=n_epochs, ground_dim=2, batch_size=batch_size)
+            learning_rate=0.01, n_epochs=n_epochs, ground_dim=2, batch_size=batch_size)
         break
     except RuntimeError:
         logging.warning("Got loss NaN")

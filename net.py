@@ -16,7 +16,7 @@ def Siamese(X, W, dim, ground_dim, lambd, p, n_iter, tol):
 
     return embed1, embed2, embed_distances
 
-def train(X_train, y_train, vocab_size, vocab2prob, n_epochs=5, batch_size=64, learning_rate=0.01, dim=32, ground_dim=2, m=1, negative_sampling_rate=1, lambd=0.05, p=1, n_iter=20, tol=1e-5):
+def train(X_train, y_train, vocab_size, vocab2prob, n_epochs=5, batch_size=64, learning_rate=0.01, dim=32, ground_dim=2, m=1, negative_sampling_rate=1, lambd=0.1, p=1, n_iter=20, tol=1e-5):
     num_samples = X_train.shape[0]
     
     X = tf.placeholder(dtype=tf.int32, shape=[None, 2], name='X')
