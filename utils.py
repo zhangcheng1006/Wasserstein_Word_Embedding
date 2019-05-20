@@ -103,6 +103,30 @@ def wasserstein_distances(embeddings1, embeddings2, u, v, lambd, p, n_iter, tol)
     results = tf.map_fn(lambda x: wasserstein_distance(x[0], x[1], u, v, lambd, p, n_iter, tol), (embeddings1, embeddings2), dtype=tf.float32)
     return results
 
+def kl_distance(embedding1, embedding2, eps):
+    """
+    Returns:
+    ------------
+        distance: KL distance between two nodes
+    """
+    min1 = tf.reduce_min(embedding1)
+    min2 = tf.reduce_min(embedding2)
+    v1 = tf.cond(tf.less_equal(min1, 0), lambda: embedding1 - min1 + eps, lambda: embedding1)
+    v2 = tf.cond(tf.less_equal(min2, 0), lambda: embedding2 - min2 + eps, lambda: embedding2)
+    v1 = v1 / tf.norm(v1)
+    v2 = v2 / tf.norm(v2)
+    kl = (tf.reduce_sum(v1 * (tf.log(v1) - tf.log(v2))) + tf.reduce_sum(v2 * (tf.log(v2) - tf.log(v1)))) / 2
+    return kl
+
+def kl_distances(embeddings1, embeddings2, eps):
+    """
+    Returns:
+    -----------
+        results: all KL distances of node pairs
+    """
+    results = tf.map_fn(lambda x: kl_distance(x[0], x[1], eps), (embeddings1, embeddings2), dtype=tf.float32)
+    return results
+
 # def wasserstein_R1_distance(n1, n2, embeddings):
 #     v1 = embeddings[n1, :]
 #     v2 = embeddings[n2, :]
@@ -158,31 +182,7 @@ def wasserstein_distances(embeddings1, embeddings2, u, v, lambd, p, n_iter, tol)
 #     results = tf.map_fn(lambda x: hyperbolic_distance(x[0], x[1], embeddings, eps), pairs, dtype=tf.float64)
 #     return results
 
-def kl_distance(n1, n2, embeddings, eps):
-    """
-    Returns:
-    ------------
-        distance: KL distance between two nodes
-    """
-    v1 = embeddings[n1, :]
-    v2 = embeddings[n2, :]
-    min1 = tf.reduce_min(v1)
-    min2 = tf.reduce_min(v2)
-    v1 = tf.cond(tf.less_equal(min1, 0), lambda: v1 - min1 + eps, lambda: v1)
-    v2 = tf.cond(tf.less_equal(min2, 0), lambda: v2 - min2 + eps, lambda: v2)
-    v1 = v1 / tf.norm(v1)
-    v2 = v2 / tf.norm(v2)
-    kl = (tf.reduce_sum(v1 * (tf.log(v1) - tf.log(v2))) + tf.reduce_sum(v2 * (tf.log(v2) - tf.log(v1)))) / 2
-    return kl
 
-def kl_distances(pairs, embeddings, eps):
-    """
-    Returns:
-    -----------
-        results: all KL distances of node pairs
-    """
-    results = tf.map_fn(lambda x: kl_distance(x[0], x[1], embeddings, eps), pairs, dtype=tf.float32)
-    return results
 
 def objective(obj_distances, embed_distances, m):
     mask = obj_distances > 0

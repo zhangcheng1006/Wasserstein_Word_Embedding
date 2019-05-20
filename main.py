@@ -1,6 +1,7 @@
 import os
 import sys
 from time import time
+import pickle
 import logging
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
@@ -12,13 +13,24 @@ from preprocessing import *
 from net import *
 from evaluation import *
 
-vocab, vocab2id, vocab2prob, word_pairs = preprocess('./data/simple.wiki.small.txt')
+# vocab, vocab2id, vocab2prob, word_pairs = preprocess('./data/simple.wiki.small.txt')
+with open('./data/vocab.pkl', 'rb') as infile:
+    vocab = pickle.load(infile)
+with open('./data/vocab2id.pkl', 'rb') as infile:
+    vocab2id = pickle.load(infile)
+with open('./data/pos_samples.pkl', 'rb') as infile:
+    pos_samples = pickle.load(infile)
+with open('./data/neg_samples.pkl', 'rb') as infile:
+    neg_samples = pickle.load(infile)
+
 logging.info("Load vocabulary and word pairs from local file.")
 
 file_name = 'WikiSmall'
 
-X_train = np.array([[vocab2id[w1], vocab2id[w2]] for (w1, w2) in word_pairs])
-y_train = np.array([1] * len(word_pairs))
+# X_train = np.array([[vocab2id[w1], vocab2id[w2]] for (w1, w2) in word_pairs])
+# y_train = np.array([1] * len(word_pairs))
+X_train = np.array(list(pos_samples) + list(neg_samples))
+y_train = np.array([1 for _ in pos_samples] + [0 for _ in neg_samples])
 
 embed_dim = 32
 ground_dim = 2
@@ -31,8 +43,7 @@ logging.info("Running Wasserstein R2 embedding, embed dim={}".format(embed_dim))
 try_count = 0
 while try_count < max_try:
     try:
-        embeddings, loss_history, time_history, embed_distances = train(
-            X_train, y_train, vocab_size=len(vocab), vocab2prob=vocab2prob, dim=embed_dim, 
+        embeddings, embed_distances = train(X_train, y_train, vocab_size=len(vocab), dim=embed_dim, 
             learning_rate=0.01, n_epochs=n_epochs, ground_dim=2, batch_size=batch_size)
         break
     except RuntimeError:
@@ -42,9 +53,7 @@ else:
     logging.warning("Fail.")
 
 logging.info("Writing {}_{}_{}_batch to local file".format(file_name, 'WassR2', embed_dim))
-np.savez('./results/{}_{}_{}_batch'.format(file_name, 'WassR2', embed_dim), 
-    vocab=vocab, vocab2id=vocab2id, embeddings=embeddings, loss=loss_history, time=time_history, 
-    embed_distances=embed_distances)
+np.savez('./results/{}_{}_{}_batch'.format(file_name, 'WassR2', embed_dim), embeddings=embeddings, embed_distances=embed_distances)
 
 word_pairs_test, true_sim = read_ground_truth('./data/wordsim353.csv')
 X_test = np.array([[vocab2id[w1], vocab2id[w2]] for (w1, w2) in word_pairs_test])
