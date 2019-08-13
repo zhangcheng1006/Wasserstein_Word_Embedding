@@ -1,3 +1,7 @@
+# Wasserstein Word Embedding
+
+This project aims to apply Wasserstein embedding on Word Embedding task. Another part of this project which applies Wasserstein embedding to graph and time series embedding can be find [here](https://github.com/svenhsia/Entropic-Wasserstein-Embedding).
+
 This project consists the following directories and files:
 
 - folder `./data/` stores training data, including preprocessed training corpus
